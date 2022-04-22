@@ -5,7 +5,9 @@ import time
 HOST = "127.0.0.1"
 PORT = 65432
 
-DELIM = b"\x99"
+DELIM = b"\n"
+
+# this is a test client for the iotftp server library.
 
 def p64(i):
     return i.to_bytes(8, 'big')
@@ -34,7 +36,7 @@ def test_working_file_transfer(s: socket.socket):
     s.connect((HOST, PORT))
     dat = s.recv(512)
     print(dat)
-    s.send(b"GET\x99test2")
+    s.send(b"GET\ntest2")
     dat2 = s.recv(32)
     
     print(dat2)
@@ -74,7 +76,7 @@ def main():
         dat = s.recv(512)
         print(dat)
 
-        s.send(b"GET\x99test")
+        s.send(b"GET\ntest")
 
         dat2 = s.recv(16)
         print(dat2)

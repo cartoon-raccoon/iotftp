@@ -28,7 +28,7 @@ class IoTFTPServer:
 
     # class attributes
     host = "127.0.0.1"
-    delimiter = b"\x99"
+    delimiter = b"\n"
     startmsg = b"HI"
 
     def __init__(self, ipaddr, port, encoding):

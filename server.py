@@ -9,7 +9,7 @@ handler = logging.StreamHandler()
 logger.addHandler(handler)
 
 def main():
-    ipaddr, port = "127.0.0.1", 65432
+    ipaddr, port = sys.argv[1], int(sys.argv[2])
     try:
         server = IoTFTPServer(ipaddr, port, 'ascii')
     except InvalidIPException:
