@@ -1,4 +1,4 @@
-iotsuite file transfer protocol
+# iotsuite file transfer protocol
 
 a custom protocol that provides only the needed functionality for iot-suite and also facilitates the functionality of iot-suite
 the server is an transient program, not a daemon, that exists only as long as it is needed
@@ -8,7 +8,7 @@ however, minimal additional functionality is provided (sending a file to the VM,
 client always initiates connection and is responsible for disconnecting
 server responds with information:
 
-- HI
+- `HI`
 - current directory (always fully qualified path)
 - user currently running as
 - effective user id
@@ -17,13 +17,13 @@ and then awaits command
 client acknowledges and sends command
 
 commands
-PUT - Transfer a file to the server [PATH, FILE SIZE]
+PUT - Transfer a file to the server `[PATH, FILE SIZE]`
     server response - 200 OK, port number to use
     client sends an ACK then connects to server on that port
     client sends a magic byte sequence on that port and initiates file transfer
     once FILE SIZE number of bytes has been read, server sends 200 OK on initial port
     client responds with ACK
-GET - Get a file from the server [PATH]
+GET - Get a file from the server `[PATH]`
     server response - 200 OK, port number to use, file size
     client sends an ACK then connects to server on that port
     server sends 200 OK and a magic byte sequence to initiate file transfer
@@ -34,9 +34,9 @@ DEL - Delete a file on the server
     server then deletes file
 PWD - Get the working directory
     server response 200 OK, path
-LSD - List directory [PATH]
+LSD - List directory `[PATH]`
     server response 200 OK, list of files separated by thing
-CWD - Change working directory [PATH]
+CWD - Change working directory `[PATH]`
     server response 200 OK
 BYE - End the connection (this also tells the server to exit)
     server response 200 OK
@@ -45,6 +45,8 @@ in case of error
     server returns to awaiting commands
 
 server responses
+
+```text
 200 AIGT
 300+
     301 PERM (permission denied)
@@ -53,6 +55,10 @@ server responses
     304 LOCK (the file is currently in use by another connection)
     305 UNSP (unsupported feature or command (usually unimplemented))
     306 ARGS (incorrect or wrong number of arguments)
+```
 
 client responses
+
+```text
 100 ACK
+```
