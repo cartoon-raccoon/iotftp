@@ -1,8 +1,9 @@
 from abc import ABC, abstractmethod
+import socket
 
 class BaseCommandHandler(ABC):
     @abstractmethod
-    def handle(self, conn, params, data, commtype):
+    def handle(self, conn: socket.socket, params, data, commtype):
         """
         Handle the main connection.
 
@@ -26,7 +27,7 @@ class BaseCommandHandler(ABC):
         pass
 
     @abstractmethod
-    def handle_subconn(self, conn, params, data, commtype):
+    def handle_subconn(self, conn: socket.socket, params, data, commtype):
         """
         Handle the subconnection for reading and writing.
 

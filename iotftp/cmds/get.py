@@ -1,6 +1,5 @@
 import socket
 import os
-import sys
 import logging
 
 from enum import Enum
@@ -134,7 +133,7 @@ class GetCmdHandler(BaseCommandHandler):
         end_fn("get_handler")
         return HandlerResult.OK, None
 
-    def handle_subconn(self, conn, params, data, commtype):
+    def handle_subconn(self, conn: socket.socket, params, data, commtype):
         start_fn("get_handler_subconn")
 
         #! ALWAYS ASSUME conn IS THE SUBCONN
