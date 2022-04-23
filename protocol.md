@@ -26,7 +26,7 @@ It then awaits a command, which the client then sends with the required argument
 - server responds with `200 AIGT` and port number to use
 - client sends `100 ACK` then connects to server on that port
 - server sends `200 AIGT` on comms port, client then initiates file transfer
-- once `FILE SIZE` number of bytes has been read, server sends `200 AIGHT` on initial port
+- once `FILE SIZE` number of bytes has been read, server sends `200 AIGT` on initial port
 - client is then free to close both sockets
 
 *`GET` - Get a file from the server `[PATH]`*
@@ -76,6 +76,8 @@ in case of error:
     304 LOCK (the file is currently in use by another connection)
     305 UNSP (unsupported feature or command (usually unimplemented))
     306 ARGS (incorrect or wrong number of arguments)
+    307 EXST (file already exists)
+    308 UNKW (unknown response)
 ```
 
 ## Client Responses
