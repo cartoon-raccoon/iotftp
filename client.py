@@ -70,21 +70,36 @@ def test_working_file_transfer(s: socket.socket):
     print(recved)
     print(inb)
 
+def test_broken_get(s: socket.socket):
+    s.connect((HOST, PORT))
+    dat = s.recv(512)
+    print(dat)
+
+    s.send(b"GET\ntest")
+
+    dat2 = s.recv(16)
+    print(dat2)
+
+    if dat2 == b"302 NONE":
+        print("successful")
+    
+    s.send(b"100 ACK")
+
 def main():
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.connect((HOST, PORT))
         dat = s.recv(512)
         print(dat)
 
-        s.send(b"GET\ntest")
+        s.send(b"DEL\ntest")
 
-        dat2 = s.recv(16)
-        print(dat2)
+        dat2 = s.recv(32)
 
         if dat2 == b"302 NONE":
-            print("successful")
-        
-        s.send(b"100 ACK")
+            s.send(b"100 ACK")
+
+        print(dat2)
+
 
 
 main()
