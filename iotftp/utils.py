@@ -59,10 +59,14 @@ class ConnState(Enum):
     PUT = 2
     # running a del command
     DEL = 3
+    # running a pwd command
+    PWD = 4
+    # running a lsd command
+    LSD = 5
     # running a cwd command
-    CWD = 4
+    CWD = 6
     # running a bye command
-    BYE = 5
+    BYE = 7
     # error running command, response to be sent
     E301 = CommandError.ERR_PERM
     E302 = CommandError.ERR_NONE

@@ -6,6 +6,7 @@ import selectors
 
 from iotftp.cmds import *
 from iotftp.cmds.get import GetCmdHandler
+from iotftp.cmds.delete import DelCmdHandler
 from iotftp.utils import *
 
 logger = logging.getLogger()
@@ -210,7 +211,20 @@ class IoTFTPServer:
                 data.state = ConnState.E305
             case "DEL":
                 logger.debug("Got DEL command")
-                # data.state = ConnState.DEL
+                if len(cmd) == 2:
+                    args = cmd[1]
+                if len(cmd) > 2:
+                    logger.debug("Error: received more than 2 arguments")
+                    data.state = ConnState.E306
+
+                    end_fn("evalcmd")
+                    return
+                
+                data.state = ConnState.DEL
+                data.handler = DelCmdHandler(args)
+            case "PWD":
+                logger.debug("Got PWD Command")
+                # data.state = ConnState.PWD
                 data.state = ConnState.E305
             case "CWD":
                 logger.debug("Got CWD command")
