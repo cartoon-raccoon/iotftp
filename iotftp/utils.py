@@ -12,7 +12,7 @@ ACKNOW = b"100 ACK"
 # ok response sent by server
 RES_OK   = b"200 AIGT"
 
-BLOCKSIZE = 1024
+DEF_BLOCKSIZE = 1024
 
 logger = logging.getLogger()
 
@@ -21,6 +21,16 @@ def start_fn(name):
 
 def end_fn(name):
     logger.debug(f"======== END  {name}========")
+
+def get_blocksize(size):
+    if size < 4096:
+        return 1024
+    elif size < 8192:
+        return 2048
+    elif size < 16384:
+        return 4096
+    else:
+        return 8192
 
 def validate_ip(ipaddr):
     for iface in ni.interfaces():

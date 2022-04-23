@@ -173,7 +173,7 @@ class GetCmdHandler(BaseCommandHandler):
         elif commtype == RW.WRITE:
             match self.state:
                 case GetCmdState.SENDING:
-                    b = self.file.read(BLOCKSIZE)
+                    b = self.file.read(get_blocksize(self.totalsize))
 
                     print(conn)
 
