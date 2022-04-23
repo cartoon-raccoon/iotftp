@@ -36,7 +36,7 @@ def test_working_file_transfer(s: socket.socket):
     s.connect((HOST, PORT))
     dat = s.recv(512)
     print(dat)
-    s.send(b"GET\ntest2")
+    s.send(b"GET\ntestelf")
     dat2 = s.recv(32)
     
     print(dat2)
@@ -52,12 +52,19 @@ def test_working_file_transfer(s: socket.socket):
     time.sleep(1)
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s2:
+
+        f = open("recvedelf", "wb")
         inb, recved = bytes(), 0
         s2.connect((HOST, port))
 
         while recved < size:
-            inb += s2.recv(1024)
-            recved = len(inb)
+            inb = s2.recv(1024)
+            recved += len(inb)
+            f.write(inb)
+        
+        f.close()
+
+        print(recved)
 
     # send on the first socket
     s.send(b"100 ACK")
@@ -66,9 +73,6 @@ def test_working_file_transfer(s: socket.socket):
 
     if d == b"200 AIGT":
         print("successful")
-    
-    print(recved)
-    print(inb)
 
 def test_broken_get(s: socket.socket):
     s.connect((HOST, PORT))
@@ -85,20 +89,23 @@ def test_broken_get(s: socket.socket):
     
     s.send(b"100 ACK")
 
+def test_delete_cmd(s: socket.socket):
+    s.connect((HOST, PORT))
+    dat = s.recv(512)
+    print(dat)
+
+    s.send(b"DEL\ntest")
+
+    dat2 = s.recv(32)
+
+    if dat2 == b"302 NONE":
+        s.send(b"100 ACK")
+
+    print(dat2)
+
 def main():
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.connect((HOST, PORT))
-        dat = s.recv(512)
-        print(dat)
-
-        s.send(b"DEL\ntest")
-
-        dat2 = s.recv(32)
-
-        if dat2 == b"302 NONE":
-            s.send(b"100 ACK")
-
-        print(dat2)
+        test_working_file_transfer(s)
 
 
 
