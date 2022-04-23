@@ -317,9 +317,12 @@ class IoTFTPServer:
         """
         start_fn("process_handler")
         print(restype, res)
+        
         if restype is None:
             logger.error("[ERR] Received invalid handler result")
-            sys.exit(1)
+            data.state = ConnState.E308
+            return
+
         if restype.is_err():
             logger.debug("[*] Restype is error, handling")
             if data.is_subconn():
@@ -327,12 +330,10 @@ class IoTFTPServer:
                 c = self.lookup_conn(conn)
                 dat = self.sel.get_key(c).data
                 dat.state = ConnState.from_handler_result(restype)
-                print(dat.state)
             # set state to error and return
             # sending the error will be handled by service_conn
             else:
                 data.state = ConnState.from_handler_result(restype)
-                print(data.state)
         else:
             match restype:
                 case HandlerResult.OK:
