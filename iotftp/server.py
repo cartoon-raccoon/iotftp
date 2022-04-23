@@ -11,17 +11,6 @@ from iotftp.utils import *
 
 logger = logging.getLogger()
 
-class Connection:
-    """
-    A wrapper around a single connection with a main server.
-    """
-
-    def __init__(self, main):
-        # the main connection
-        self.main = main
-        # any subconnections (for data transfer)
-        self.subconns = []
-
 class IoTFTPServer:
     """
     The core class of this module.
@@ -317,7 +306,7 @@ class IoTFTPServer:
         """
         start_fn("process_handler")
         print(restype, res)
-        
+
         if restype is None:
             logger.error("[ERR] Received invalid handler result")
             data.state = ConnState.E308
