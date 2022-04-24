@@ -1,6 +1,7 @@
 from socket import socket, AF_INET, SOCK_STREAM
 import os
 import logging
+import time
 
 logger = logging.getLogger()
 
@@ -29,12 +30,14 @@ class IoTFTPClient:
 
         return (pwd, user, euid)
 
+    def determine_err():
+        pass
+
     def get(self, filename):
 
         abspath = os.path.abspath(filename)
         if os.path.exists(abspath):
-            # todo: make this return error
-            return
+            raise FileExistsError(abspath)
         
         with socket(AF_INET, SOCK_STREAM) as s:
             s.connect((self.ipaddr, self.port))
@@ -53,19 +56,28 @@ class IoTFTPClient:
                 s.send(ACKNOW)
                 return
 
-            params = params.split(DELIMITER)
+            params = params.split(DELIMITER.decode(self.encoding))
             port, size = int(params[1]), int(params[2])
 
-            logger.debug(f"[*] Reading {size} bytes from port {port}")
+            print(f"[*] Reading {size} bytes from port {port}")
 
             s.send(ACKNOW)
 
             s2 = socket(AF_INET, SOCK_STREAM)
+
+            time.sleep(1)
+
+            # attempt to connect 5 times; if not, return error
+            i = 0
             while True:
                 try:
                     s2.connect((self.ipaddr, port))
-                except:
-                    continue
+                except Exception as e:
+                    i += 1
+                    if i >= 5:
+                        continue
+                    else:
+                        raise e
                 else:
                     break
 
