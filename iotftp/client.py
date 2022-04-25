@@ -7,6 +7,16 @@ logger = logging.getLogger()
 
 from iotftp.utils import *
 
+class ServerError(Exception):
+    """
+    Error that has occurred on the server.
+    """
+    def __init__(self, string):
+        self.string = string
+
+    def __repr__(self):
+        return self.string
+
 class IoTFTPClient:
     def __init__(self, ipaddr, port, encoding):
         self.ipaddr = ipaddr
@@ -30,8 +40,24 @@ class IoTFTPClient:
 
         return (pwd, user, euid)
 
-    def determine_err():
-        pass
+    def determine_err(errb):
+        match errb[0:3]:
+            case "301":
+                return ServerError("[301] Permission denied")
+            case "302":
+                return ServerError("[302] No such file or directory")
+            case "303":
+                return ServerError("[303] Not a directory")
+            case "304":
+                return ServerError("[304] File is currently in use")
+            case "305":
+                return ServerError("[305] Unsupported command")
+            case "306":
+                return ServerError("[306] Invalid arguments specified")
+            case "307":
+                return ServerError("[307] File already exists on server")
+            case "308":
+                return ServerError("[308] Unknown error")
 
     def get(self, filename):
 
@@ -52,9 +78,8 @@ class IoTFTPClient:
             params = s.recv(32).decode(self.encoding)
 
             if not params.startswith("200 AIGT"):
-                # todo: determine error type, handle it, and raise err
                 s.send(ACKNOW)
-                return
+                raise self.determine_err(params)
 
             params = params.split(DELIMITER.decode(self.encoding))
             port, size = int(params[1]), int(params[2])
@@ -65,16 +90,15 @@ class IoTFTPClient:
 
             s2 = socket(AF_INET, SOCK_STREAM)
 
-            time.sleep(1)
-
             # attempt to connect 5 times; if not, return error
             i = 0
             while True:
                 try:
                     s2.connect((self.ipaddr, port))
-                except Exception as e:
+                except OSError as e:
                     i += 1
-                    if i >= 5:
+                    if i < 5:
+                        time.sleep(0.5)
                         continue
                     else:
                         raise e
