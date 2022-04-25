@@ -43,7 +43,7 @@ class PutCmdHandler(BaseCommandHandler):
         self.blocksize = get_blocksize(self.totalsize)
 
 
-    def handler(self, conn: socket.socket, params, data, commtype):
+    def handle(self, conn: socket.socket, params, data, commtype):
         start_fn("put_handler")
 
         if commtype == RW.READ:
@@ -84,6 +84,7 @@ class PutCmdHandler(BaseCommandHandler):
                     except Exception as e:
                         logger.error(f"[ERR] {e}")
                         end_fn("put_handler")
+                        self.cleanup_err()
                         return HandlerResult.E308, CommandError.ERR_UNKW
                     
                     port = sock.getsockname()[1]
@@ -99,6 +100,7 @@ class PutCmdHandler(BaseCommandHandler):
                     self.subconn = sock
                     self.state = PutCmdState.SENTPORT
                     self.file = f
+                    self.totalsize = int(self.args[1])
 
                     end_fn("put_handler")
                     return HandlerResult.NEWCONN, sock
@@ -149,3 +151,7 @@ class PutCmdHandler(BaseCommandHandler):
             pass
 
         return HandlerResult.OK, None
+    
+    def cleanup_err(self):
+        if os.path.exists(self.args[0]):
+            os.remove(self.args[0])
