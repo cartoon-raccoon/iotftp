@@ -14,6 +14,8 @@ RES_OK   = b"200 AIGT"
 
 DEF_BLOCKSIZE = 1024
 
+DELIMITER = b"\n"
+
 logger = logging.getLogger()
 
 def start_fn(name):
