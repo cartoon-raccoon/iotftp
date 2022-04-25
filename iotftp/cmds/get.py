@@ -38,6 +38,7 @@ class GetCmdHandler(BaseCommandHandler):
         self.args = args
         # total size of the file
         self.totalsize = 0
+        self.blocksize = get_blocksize(self.totalsize)
         # number of bytes sent
         self.sent = 0
 
@@ -172,13 +173,13 @@ class GetCmdHandler(BaseCommandHandler):
         elif commtype == RW.WRITE:
             match self.state:
                 case GetCmdState.SENDING:
-                    b = self.file.read(get_blocksize(self.totalsize))
+                    b = self.file.read(self.blocksize)
 
                     self.sent += conn.send(b)
 
                     if self.sent >= self.totalsize:
                         self.state = GetCmdState.COMPLETE
-                    pass
+                        self.file.close()
 
         end_fn("get_handler_subconn")
         return HandlerResult.OK, None
