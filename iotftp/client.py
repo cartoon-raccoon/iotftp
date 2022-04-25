@@ -67,6 +67,22 @@ class IoTFTPClient:
                 return ServerError("[307] File already exists on server")
             case "308":
                 return ServerError("[308] Unknown error")
+    
+    def eval_result(self, resb, success_msg):
+        """
+        Evaluates the success of a command from a bytes object.
+        This should be the bytes received from the server.
+
+        Also accepts a success message to print on success.
+        """
+        if resb == RES_OK:
+            logger.debug(success_msg)
+        elif len(resb) > 0 and resb[0] == b"3":
+                raise self.determine_err(resb.decode(self.encoding))
+        else:
+            logger.error(f"[ERR] Unknown server response: {resb}")
+
+
 
     def get(self, filename):
 
@@ -133,12 +149,7 @@ class IoTFTPClient:
             s.send(ACKNOW)
             d = s.recv(8)
 
-            if d == RES_OK:
-                logger.debug(f"[*] File transfer successful: {recved} bytes received")
-            elif len(d) > 0 and d[0] == b"3":
-                    raise self.determine_err(d.decode(self.encoding))
-            else:
-                logger.error(f"[ERR] Unknown server response: {d}")
+        self.eval_result(d, f"[*] File transfer successful: {recved} bytes received")
 
     def put(self, filename):
         abspath = os.path.abspath(filename)
@@ -206,19 +217,22 @@ class IoTFTPClient:
                 f.close()
 
             d = s.recv(8)
-            if d == RES_OK:
-                print(f"[*] File transfer successful: {sent} bytes sent")
-            elif len(d) > 0 and d[0] == b"3":
-                    raise self.determine_err(d.decode(self.encoding))
-            else:
-                print(f"[ERR] Unknown server response: {d}")
+
+        self.eval_result(d, f"[*] File transfer successful: {sent} bytes sent")
 
     def delete(self, filename):
         with socket(AF_INET, SOCK_STREAM) as s:
             s.connect((self.ipaddr, self.port))
 
             _ = self.parse_welcome_msg(s)
-        pass
+
+            # construct and send command
+            args = [ b"DEL", bytes(filename, self.encoding) ]
+            s.send(DELIMITER.join(args))
+
+            res = s.recv(8)
+            
+        self.eval_result(res, "[*] Command successful")
 
     def pwd(self):
         pass
