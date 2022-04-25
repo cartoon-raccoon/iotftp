@@ -40,7 +40,7 @@ class IoTFTPClient:
 
         return (pwd, user, euid)
 
-    def determine_err(errb):
+    def determine_err(self, errb):
         match errb[0:3]:
             case "301":
                 return ServerError("[301] Permission denied")
@@ -79,7 +79,9 @@ class IoTFTPClient:
 
             if not params.startswith("200 AIGT"):
                 s.send(ACKNOW)
-                raise self.determine_err(params)
+                print(params)
+                e = self.determine_err(params)
+                raise e
 
             params = params.split(DELIMITER.decode(self.encoding))
             port, size = int(params[1]), int(params[2])
