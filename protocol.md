@@ -81,6 +81,7 @@ in case of error:
     306 ARGS (incorrect or wrong number of arguments)
     307 EXST (file already exists)
     308 UNKW (unknown response)
+    309 ISDR (is a directory)
 ```
 
 ## Client Responses

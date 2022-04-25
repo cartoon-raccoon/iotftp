@@ -64,6 +64,7 @@ class CommandError(Enum):
     ERR_ARGS = b"306 ARGS"
     ERR_EXST = b"307 EXST"
     ERR_UNKW = b"308 UNKW"
+    ERR_ISDR = b"309 ISDR"
 
 class ConnState(Enum):
     # no command currently running
@@ -91,6 +92,7 @@ class ConnState(Enum):
     E306 = CommandError.ERR_ARGS
     E307 = CommandError.ERR_EXST
     E308 = CommandError.ERR_UNKW
+    E309 = CommandError.ERR_ISDR
     # awaiting acknowledgement for error
     ACK = 12
 
@@ -116,6 +118,8 @@ class ConnState(Enum):
                 return ConnState.E307
             case HandlerResult.E308:
                 return ConnState.E308
+            case HandlerResult.E309:
+                return ConnState.E309
             case _:
                 #? raise error?
                 pass
@@ -194,6 +198,7 @@ class HandlerResult(Enum):
     E306 = CommandError.ERR_ARGS
     E307 = CommandError.ERR_EXST
     E308 = CommandError.ERR_UNKW
+    E309 = CommandError.ERR_ISDR
 
     def is_err(self):
         return self.name[0] == "E"

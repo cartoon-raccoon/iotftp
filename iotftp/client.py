@@ -67,6 +67,8 @@ class IoTFTPClient:
                 return ServerError("[307] File already exists on server")
             case "308":
                 return ServerError("[308] Unknown error")
+            case "309":
+                return ServerError("[309] Is a directory")
     
     def eval_result(self, resb, success_msg):
         """

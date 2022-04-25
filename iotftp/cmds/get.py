@@ -88,6 +88,7 @@ class GetCmdHandler(BaseCommandHandler):
                     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                     sock.bind((params.host, 0))
                     try:
+                        self.file = open(self.args, "rb")
                         self.totalsize = os.path.getsize(f)
                         logger.debug(f"Got size {self.totalsize}")
                     except FileNotFoundError:
@@ -96,6 +97,9 @@ class GetCmdHandler(BaseCommandHandler):
                     except PermissionError:
                         end_fn("get_handler")
                         return HandlerResult.E301, CommandError.ERR_PERM
+                    except IsADirectoryError:
+                        end_fn("get_handler")
+                        return HandlerResult.E309, CommandError.ERR_ISDR
                     except OSError as e:
                         logger.debug(f"got err: {e}")
 
@@ -163,8 +167,7 @@ class GetCmdHandler(BaseCommandHandler):
                     oldconn = self.subconn
                     self.subconn = newconn
 
-                    # once connection received, open file and change state
-                    self.file = open(self.args, "rb")
+                    # once connection received, change state
                     self.state = GetCmdState.SENDING
 
                     end_fn("get_handler_subconn")
