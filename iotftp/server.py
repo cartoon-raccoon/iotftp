@@ -7,6 +7,7 @@ import selectors
 from iotftp.cmds import *
 from iotftp.cmds.get import GetCmdHandler
 from iotftp.cmds.delete import DelCmdHandler
+from iotftp.cmds.put import PutCmdHandler
 from iotftp.utils import *
 
 logger = logging.getLogger()
@@ -200,37 +201,47 @@ class IoTFTPServer:
         match command:
             case "GET":
                 logger.debug("Got GET command")
-                if len(cmd) == 2:
-                    args = cmd[1]
-                if len(cmd) > 2:
-                    logger.debug("Error: received more than 2 arguments")
+                if len(cmd) != 2:
+                    logger.debug("Error: did not receive exactly 2 arguments")
                     data.state = ConnState.E306
 
                     end_fn("evalcmd")
                     return
 
+                args = cmd[1]
                 data.state = ConnState.GET
                 data.handler = GetCmdHandler(args)
             case "PUT":
                 logger.debug("Got PUT command")
-                # data.state = ConnState.PUT
-                data.state = ConnState.E305
-            case "DEL":
-                logger.debug("Got DEL command")
-                if len(cmd) == 2:
-                    args = cmd[1]
-                if len(cmd) > 2:
-                    logger.debug("Error: received more than 2 arguments")
+                if len(cmd) != 3:
+                    logger.debug("Error: received not exactly 3 arguments")
                     data.state = ConnState.E306
 
                     end_fn("evalcmd")
                     return
                 
+                args = cmd[1:]
+                data.state = ConnState.PUT
+                data.handler = PutCmdHandler(args)
+            case "DEL":
+                logger.debug("Got DEL command")
+                if len(cmd) != 2:
+                    logger.debug("Error: received not exactly 2 arguments")
+                    data.state = ConnState.E306
+
+                    end_fn("evalcmd")
+                    return
+                
+                args = cmd[1]
                 data.state = ConnState.DEL
                 data.handler = DelCmdHandler(args)
             case "PWD":
                 logger.debug("Got PWD Command")
                 # data.state = ConnState.PWD
+                data.state = ConnState.E305
+            case "LSD":
+                logger.debug("Got LSD command")
+                # data.state = ConnState.LSD
                 data.state = ConnState.E305
             case "CWD":
                 logger.debug("Got CWD command")
