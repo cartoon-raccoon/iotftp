@@ -1,6 +1,12 @@
+import logging
 import iotftp
 
 # this is a test client for the iotftp server library.
+
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)
+handler = logging.StreamHandler()
+logger.addHandler(handler)
 
 def main():
     print("running main")
