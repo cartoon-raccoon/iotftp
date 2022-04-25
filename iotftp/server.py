@@ -76,12 +76,16 @@ class IoTFTPServer:
                         self.service_conn(k, m)
                     except ConnectionResetError:
                         logger.debug(f"[{k.data.addr}] Connection reset by peer")
+                        self.close_all(k.fileobj, k.data)
                     except ConnClosedErr:
                         logger.debug(f"[{k.data.addr}] Connection closed by peer")
-                        self.close(k.fileobj)
+                        self.close_all(k.fileobj, k.data)
                     except BrokenPipeError:
                         logger.debug(f"[{k.data.addr}] Connection closed on write")
-                        self.close(k.fileobj)
+                        self.close_all(k.fileobj, k.data)
+                    except TimeoutError:
+                        logger.debug(f"[{k.data.addr}] Connection timed out, closing")
+                        self.close_all(k.fileobj, k.data)
             logger.debug("**************** Event Loop End   ****************")
         self.stop()
             
@@ -129,7 +133,7 @@ class IoTFTPServer:
         """
         Closes a given connection and all its subconnections.
         """
-        logger.debug("[*] Closing connection")
+        logger.debug(f"[*] Closing connection {conn}")
 
         # unregister and close all subconnections
         for subconn in self.conns.pop(conn, []):
@@ -141,6 +145,19 @@ class IoTFTPServer:
 
         # decrement number of active connections
         self.activecount -= 1
+
+    def close_all(self, conn, data):
+        """
+        If a subconn is given, looks up and closes its main connection.
+        Else, just runs close().
+        """
+
+        if data.is_subconn():
+            mainconn = self.lookup_conn(conn)
+        else:
+            mainconn = conn
+        
+        self.close(mainconn)
 
     def add_subconn(self, mainconn, subconn, data):
         # store the subconnection in the conns dict
@@ -235,6 +252,8 @@ class IoTFTPServer:
         conn = key.fileobj
         data = key.data
 
+        logger.debug(f"Servicing connection {data.addr}")
+
         logger.debug(data.state)
 
         if conn.fileno() < 0:
@@ -263,7 +282,7 @@ class IoTFTPServer:
                 else:
                     ty, res = data.handler.handle(conn, self.params(), data, RW.READ)
                 self.process_handler_result(ty, res, conn, data)
-        
+                
         logger.debug(data.state)
         if conn.fileno() < 0:
             return

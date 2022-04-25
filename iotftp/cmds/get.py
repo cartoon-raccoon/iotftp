@@ -146,9 +146,8 @@ class GetCmdHandler(BaseCommandHandler):
                     # assume self.subconn is the listening socket
 
                     # set subconn to blocking and listen
-                    self.subconn.setblocking(True)
+                    self.subconn.settimeout(5)
 
-                    print(self.subconn.getsockname())
                     logger.debug("Listening for connection")
                     self.subconn.listen()
 
@@ -174,8 +173,6 @@ class GetCmdHandler(BaseCommandHandler):
             match self.state:
                 case GetCmdState.SENDING:
                     b = self.file.read(get_blocksize(self.totalsize))
-
-                    print(conn)
 
                     self.sent += conn.send(b)
 
