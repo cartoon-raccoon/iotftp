@@ -71,17 +71,19 @@ class IoTFTPClient:
             _ = self.parse_welcome_msg(s)
 
             # construct and send command
-            args = [ b"GET", bytes(filename, "ascii") ]
+            args = [ b"GET", bytes(filename, self.encoding) ]
             s.send(DELIMITER.join(args))
 
             # receive command parameters
-            params = s.recv(32).decode(self.encoding)
+            params = s.recv(32)
+            if not params:
+                raise ConnectionResetError(s)
+            
+            params = params.decode(self.encoding)
 
             if not params.startswith("200 AIGT"):
                 s.send(ACKNOW)
-                print(params)
-                e = self.determine_err(params)
-                raise e
+                raise self.determine_err(params)
 
             params = params.split(DELIMITER.decode(self.encoding))
             port, size = int(params[1]), int(params[2])
@@ -124,11 +126,83 @@ class IoTFTPClient:
 
             if d == RES_OK:
                 logger.debug(f"[*] File transfer successful: {recved} bytes received")
-            
-            # todo: do check for error
+            elif len(d) > 0 and d[0] == b"3":
+                    raise self.determine_err(d.decode(self.encoding))
+            else:
+                logger.error(f"[ERR] Unknown server response: {d}")
 
     def put(self, filename):
-        pass
+        abspath = os.path.abspath(filename)
+        if not os.path.exists(abspath):
+            raise FileNotFoundError(abspath)
+
+        with socket(AF_INET, SOCK_STREAM) as s:
+            s.connect((self.ipaddr, self.port))
+
+            _ = self.parse_welcome_msg(s)
+
+            size = os.path.getsize(abspath)
+            
+            args = [
+                b"PUT",
+                bytes(filename, self.encoding),
+                bytes(str(size), self.encoding),
+            ]
+
+            s.send(DELIMITER.join(args))
+
+            params = s.recv(32)
+            if not params:
+                raise ConnectionResetError(s)
+            
+            params = params.decode(self.encoding)
+
+            if not params.startswith("200 AIGT"):
+                s.send(ACKNOW)
+                raise self.determine_err(params)
+
+            params = params.split(DELIMITER.decode(self.encoding))
+            port = int(params[1])
+
+            logger.debug(f"[*] Sending {size} bytes on port {port}")
+
+            s.send(ACKNOW)
+
+            s2 = socket(AF_INET, SOCK_STREAM)
+
+            i = 0
+            while True:
+                try:
+                    s2.connect((self.ipaddr, port))
+                except OSError as e:
+                    i += 1
+                    if i < 5:
+                        time.sleep(0.5)
+                        continue
+                    else:
+                        raise e
+                else:
+                    break
+            
+            with s2:
+                f = open(filename, "rb")
+                sent = 0
+                bs = get_blocksize(size)
+
+                while sent < size:
+                    outb = f.read(bs)
+                    out = s2.send(outb)
+                    sent += out
+                
+                f.close()
+
+            d = s.recv(8)
+            if d == RES_OK:
+                print(f"[*] File transfer successful: {sent} bytes sent")
+            elif len(d) > 0 and d[0] == b"3":
+                    raise self.determine_err(d.decode(self.encoding))
+            else:
+                print(f"[ERR] Unknown server response: {d}")
 
     def delete(self, filename):
         pass
