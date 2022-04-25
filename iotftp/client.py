@@ -17,6 +17,11 @@ class ServerError(Exception):
     def __repr__(self):
         return self.string
 
+class UnknownWelcome(Exception):
+    """
+    Raised when the welcome message received is not as expected.
+    """
+
 class IoTFTPClient:
     def __init__(self, ipaddr, port, encoding):
         self.ipaddr = ipaddr
@@ -34,11 +39,15 @@ class IoTFTPClient:
         
         welcome = dat.split(DELIMITER)
 
-        pwd = welcome[1].decode(self.encoding)
-        user = welcome[2].decode(self.encoding)
-        euid = int(welcome[3].decode(self.encoding))
+        if welcome[0] != b"HI":
+            raise UnknownWelcome()
 
-        return (pwd, user, euid)
+        ver = welcome[1].decode(self.encoding)
+        pwd = welcome[2].decode(self.encoding)
+        user = welcome[3].decode(self.encoding)
+        euid = int(welcome[4].decode(self.encoding))
+
+        return (ver, pwd, user, euid)
 
     def determine_err(self, errb):
         match errb[0:3]:
@@ -205,6 +214,10 @@ class IoTFTPClient:
                 print(f"[ERR] Unknown server response: {d}")
 
     def delete(self, filename):
+        with socket(AF_INET, SOCK_STREAM) as s:
+            s.connect((self.ipaddr, self.port))
+
+            _ = self.parse_welcome_msg(s)
         pass
 
     def pwd(self):

@@ -13,6 +13,7 @@ On successful execution of a command, the server always sends the final transmis
 The server responds with the following information separated by a delimiter:
 
 - `HI`
+- protocol version ("V{version}")
 - current directory (always fully qualified path)
 - user currently running as
 - effective user id
@@ -49,7 +50,9 @@ It then awaits a command, which the client then sends with the required argument
 
 *`LSD` - List directory `[PATH]`*
 
-- server response 200 OK, list of files separated by delimiter
+- server response 200 OK, number of bytes to be sent to client
+- client sends an ack and then begins to receive bytes
+- server sends list of files separated by delimiter
 
 *`CWD` - Change working directory `[PATH]`*
 

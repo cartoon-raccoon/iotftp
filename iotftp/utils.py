@@ -16,6 +16,8 @@ DEF_BLOCKSIZE = 1024
 
 DELIMITER = b"\n"
 
+VERSION = "0.1.0"
+
 logger = logging.getLogger()
 
 def start_fn(name):

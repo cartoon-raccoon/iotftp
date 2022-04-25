@@ -121,7 +121,8 @@ class IoTFTPServer:
         delim = IoTFTPServer.delimiter
 
         send = [
-            IoTFTPServer.startmsg, 
+            IoTFTPServer.startmsg,
+            bytes(VERSION, self.encoding),
             bytes(self.cwd, self.encoding),
             bytes(self.user, self.encoding),
             bytes(str(self.euid), self.encoding),
