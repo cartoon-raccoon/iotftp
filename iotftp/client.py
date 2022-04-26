@@ -69,7 +69,7 @@ class IoTFTPClient:
             return ServerError("[304] File is currently in use")
         elif err == "305":
             return ServerError("[305] Unsupported command")
-        if err == "306":
+        elif err == "306":
             return ServerError("[306] Invalid arguments specified")
         elif err == "307":
             return ServerError("[307] File already exists on server")
@@ -126,7 +126,6 @@ class IoTFTPClient:
             params = params.split(DELIMITER.decode(self.encoding))
             port, size = int(params[1]), int(params[2])
 
-            print(f"[*] Reading {size} bytes from port {port}")
 
             s.send(ACKNOW)
 
@@ -146,6 +145,9 @@ class IoTFTPClient:
                         raise e
                 else:
                     break
+
+            newport = s2.getsockname()[1]
+            logger.info(f"[*] Reading {size} bytes from port {newport}")
 
             with s2:
                 s2.settimeout(120)
