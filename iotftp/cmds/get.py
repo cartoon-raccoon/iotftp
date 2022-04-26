@@ -46,92 +46,90 @@ class GetCmdHandler(BaseCommandHandler):
         start_fn("get_handler")
         if commtype == iotftp.RW.READ:
             logger.debug("Reading from connection")
-            match self.state:
-                case GetCmdState.SENTPORT:
-                    # receive acknowledgement
-                    logger.debug("Sent port, awaiting acknowledgement")
-                    b = conn.recv(8)
-                    if not b:
-                        raise ConnClosedErr()
+            if self.state == GetCmdState.SENTPORT:
+                # receive acknowledgement
+                logger.debug("Sent port, awaiting acknowledgement")
+                b = conn.recv(8)
+                if not b:
+                    raise ConnClosedErr()
 
-                    if b == ACKNOW:
-                        logger.debug("Got acknowledgement")
-                        self.state = GetCmdState.CONNECT
-                    else:
-                        # instead of sending an error back to the client, just close it
-                        raise ConnClosedErr()
-                case GetCmdState.COMPLETE:
-                    logger.debug("Transfer complete, awaiting acknowledgement")
-                    b = conn.recv(8)
+                if b == ACKNOW:
+                    logger.debug("Got acknowledgement")
+                    self.state = GetCmdState.CONNECT
+                else:
+                    # instead of sending an error back to the client, just close it
+                    raise ConnClosedErr()
+            elif self.state == GetCmdState.COMPLETE:
+                logger.debug("Transfer complete, awaiting acknowledgement")
+                b = conn.recv(8)
 
-                    if b == ACKNOW:
-                        logger.debug("Got acknowledgement")
-                    else:
-                        raise ConnClosedErr()
+                if b == ACKNOW:
+                    logger.debug("Got acknowledgement")
+                else:
+                    raise ConnClosedErr()
 
-                    self.state = GetCmdState.SENDACK
-                    
-                    end_fn("get_handler")
-                    return HandlerResult.OK, None
+                self.state = GetCmdState.SENDACK
+                
+                end_fn("get_handler")
+                return HandlerResult.OK, None
 
         elif commtype == iotftp.RW.WRITE:
             logger.debug("Writing to connection")
-            match self.state:
-                case GetCmdState.UNHANDLED:
-                    self.mainconn = conn
-                    logger.debug(f"[{data.addr}] Connection unhandled, setting up now")
-                    logger.debug(f"args: {self.args}")
-                    f = os.path.abspath(self.args)
+            if self.state == GetCmdState.UNHANDLED:
+                self.mainconn = conn
+                logger.debug(f"[{data.addr}] Connection unhandled, setting up now")
+                logger.debug(f"args: {self.args}")
+                f = os.path.abspath(self.args)
 
-                    logger.debug(f"Got fully qualified path {f}")
-                    # create a new socket and bind to it
-                    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                    sock.bind((params.host, 0))
-                    try:
-                        self.file = open(self.args, "rb")
-                        self.totalsize = os.path.getsize(f)
-                        logger.debug(f"Got size {self.totalsize}")
-                    except FileNotFoundError:
-                        end_fn("get_handler")
-                        return HandlerResult.E302, CommandError.ERR_NONE
-                    except PermissionError:
-                        end_fn("get_handler")
-                        return HandlerResult.E301, CommandError.ERR_PERM
-                    except IsADirectoryError:
-                        end_fn("get_handler")
-                        return HandlerResult.E309, CommandError.ERR_ISDR
-                    except OSError as e:
-                        logger.debug(f"got err: {e}")
-
-                        end_fn("get_handler")
-                        return HandlerResult.E302, CommandError.ERR_NONE
-
-                    port = sock.getsockname()[1]
-
-                    logger.debug(f"Got port {port}")
-                    
-                    reply = [
-                        RES_OK,
-                        bytes(str(sock.getsockname()[1]), params.encoding),
-                        bytes(str(self.totalsize), params.encoding),
-                    ]
-                    
-                    conn.send(params.delim.join(reply))
-                    self.subconn = sock
-                    self.state = GetCmdState.SENTPORT
+                logger.debug(f"Got fully qualified path {f}")
+                # create a new socket and bind to it
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sock.bind((params.host, 0))
+                try:
+                    self.file = open(self.args, "rb")
+                    self.totalsize = os.path.getsize(f)
+                    logger.debug(f"Got size {self.totalsize}")
+                except FileNotFoundError:
+                    end_fn("get_handler")
+                    return HandlerResult.E302, CommandError.ERR_NONE
+                except PermissionError:
+                    end_fn("get_handler")
+                    return HandlerResult.E301, CommandError.ERR_PERM
+                except IsADirectoryError:
+                    end_fn("get_handler")
+                    return HandlerResult.E309, CommandError.ERR_ISDR
+                except OSError as e:
+                    logger.debug(f"got err: {e}")
 
                     end_fn("get_handler")
-                    return HandlerResult.NEWCONN, sock
+                    return HandlerResult.E302, CommandError.ERR_NONE
 
-                case GetCmdState.SENDING:
-                    logger.debug(f"{data.addr}] Connection sending")
-                    pass
-                case GetCmdState.SENDACK:
-                    logger.debug(f"Sending acknowledgement to client")
-                    conn.send(RES_OK)
+                port = sock.getsockname()[1]
 
-                    end_fn("get_handler")
-                    return HandlerResult.DONE, None
+                logger.debug(f"Got port {port}")
+                
+                reply = [
+                    RES_OK,
+                    bytes(str(sock.getsockname()[1]), params.encoding),
+                    bytes(str(self.totalsize), params.encoding),
+                ]
+                
+                conn.send(params.delim.join(reply))
+                self.subconn = sock
+                self.state = GetCmdState.SENTPORT
+
+                end_fn("get_handler")
+                return HandlerResult.NEWCONN, sock
+
+            elif self.state == GetCmdState.SENDING:
+                logger.debug(f"{data.addr}] Connection sending")
+                pass
+            elif self.state == GetCmdState.SENDACK:
+                logger.debug(f"Sending acknowledgement to client")
+                conn.send(RES_OK)
+
+                end_fn("get_handler")
+                return HandlerResult.DONE, None
 
         logger.debug(self.state)
 
@@ -145,44 +143,42 @@ class GetCmdHandler(BaseCommandHandler):
 
         if commtype == RW.READ:
             # only read from sending socket if waiting for connection (SENTPORT)
-            match self.state:
-                case GetCmdState.CONNECT:
-                    # listen for connection
-                    # assume self.subconn is the listening socket
+            if self.state == GetCmdState.CONNECT:
+                # listen for connection
+                # assume self.subconn is the listening socket
 
-                    # set subconn to blocking and listen
-                    self.subconn.settimeout(5)
+                # set subconn to blocking and listen
+                self.subconn.settimeout(5)
 
-                    logger.debug("Listening for connection")
-                    self.subconn.listen()
+                logger.debug("Listening for connection")
+                self.subconn.listen()
 
-                    newconn, addr = self.subconn.accept()
+                newconn, addr = self.subconn.accept()
 
-                    logger.debug(f"Got new connection {addr}")
+                logger.debug(f"Got new connection {addr}")
 
-                    newdata = ConnData(ConnType.TRANSFER, addr, None, self)
+                newdata = ConnData(ConnType.TRANSFER, addr, None, self)
 
-                    # replace old connection with new one
-                    # don't close it here, will be closed on processing
-                    oldconn = self.subconn
-                    self.subconn = newconn
+                # replace old connection with new one
+                # don't close it here, will be closed on processing
+                oldconn = self.subconn
+                self.subconn = newconn
 
-                    # once connection received, change state
-                    self.state = GetCmdState.SENDING
+                # once connection received, change state
+                self.state = GetCmdState.SENDING
 
-                    end_fn("get_handler_subconn")
-                    return HandlerResult.REPLACE, (oldconn, (newconn, newdata))
+                end_fn("get_handler_subconn")
+                return HandlerResult.REPLACE, (oldconn, (newconn, newdata))
         
         elif commtype == RW.WRITE:
-            match self.state:
-                case GetCmdState.SENDING:
-                    b = self.file.read(self.blocksize)
+            if self.state == GetCmdState.SENDING:
+                b = self.file.read(self.blocksize)
 
-                    self.sent += conn.send(b)
+                self.sent += conn.send(b)
 
-                    if self.sent >= self.totalsize:
-                        self.state = GetCmdState.COMPLETE
-                        self.file.close()
+                if self.sent >= self.totalsize:
+                    self.state = GetCmdState.COMPLETE
+                    self.file.close()
 
         end_fn("get_handler_subconn")
         return HandlerResult.OK, None

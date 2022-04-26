@@ -199,60 +199,59 @@ class IoTFTPServer:
 
         command = cmd[0]
 
-        match command:
-            case "GET":
-                logger.debug("Got GET command")
-                if len(cmd) != 2:
-                    logger.debug("Error: did not receive exactly 2 arguments")
-                    data.state = ConnState.E306
+        if command == "GET":
+            logger.debug("Got GET command")
+            if len(cmd) != 2:
+                logger.debug("Error: did not receive exactly 2 arguments")
+                data.state = ConnState.E306
 
-                    end_fn("evalcmd")
-                    return
+                end_fn("evalcmd")
+                return
 
-                args = cmd[1]
-                data.state = ConnState.GET
-                data.handler = GetCmdHandler(args)
-            case "PUT":
-                logger.debug("Got PUT command")
-                if len(cmd) != 3:
-                    logger.debug("Error: received not exactly 3 arguments")
-                    data.state = ConnState.E306
+            args = cmd[1]
+            data.state = ConnState.GET
+            data.handler = GetCmdHandler(args)
+        elif command == "PUT":
+            logger.debug("Got PUT command")
+            if len(cmd) != 3:
+                logger.debug("Error: received not exactly 3 arguments")
+                data.state = ConnState.E306
 
-                    end_fn("evalcmd")
-                    return
-                
-                args = cmd[1:]
-                data.state = ConnState.PUT
-                data.handler = PutCmdHandler(args)
-            case "DEL":
-                logger.debug("Got DEL command")
-                if len(cmd) != 2:
-                    logger.debug("Error: received not exactly 2 arguments")
-                    data.state = ConnState.E306
+                end_fn("evalcmd")
+                return
+            
+            args = cmd[1:]
+            data.state = ConnState.PUT
+            data.handler = PutCmdHandler(args)
+        elif command == "DEL":
+            logger.debug("Got DEL command")
+            if len(cmd) != 2:
+                logger.debug("Error: received not exactly 2 arguments")
+                data.state = ConnState.E306
 
-                    end_fn("evalcmd")
-                    return
-                
-                args = cmd[1]
-                data.state = ConnState.DEL
-                data.handler = DelCmdHandler(args)
-            case "PWD":
-                logger.debug("Got PWD Command")
-                # data.state = ConnState.PWD
-                data.state = ConnState.E305
-            case "LSD":
-                logger.debug("Got LSD command")
-                # data.state = ConnState.LSD
-                data.state = ConnState.E305
-            case "CWD":
-                logger.debug("Got CWD command")
-                # data.state = ConnState.CWD
-                data.state = ConnState.E305
-            case "BYE":
-                logger.debug("Got BYE command")
-                data.state = ConnState.BYE
-            case _:
-                logger.debug(f"Got {command}")
+                end_fn("evalcmd")
+                return
+            
+            args = cmd[1]
+            data.state = ConnState.DEL
+            data.handler = DelCmdHandler(args)
+        elif command == "PWD":
+            logger.debug("Got PWD Command")
+            # data.state = ConnState.PWD
+            data.state = ConnState.E305
+        elif command == "LSD":
+            logger.debug("Got LSD command")
+            # data.state = ConnState.LSD
+            data.state = ConnState.E305
+        elif command == "CWD":
+            logger.debug("Got CWD command")
+            # data.state = ConnState.CWD
+            data.state = ConnState.E305
+        elif command == "BYE":
+            logger.debug("Got BYE command")
+            data.state = ConnState.BYE
+        else:
+            logger.debug(f"Got {command}")
         end_fn("evalcmd")
     
     def service_conn(self, key, mask):
@@ -310,7 +309,7 @@ class IoTFTPServer:
             elif data.state == ConnState.BYE:
                 logger.debug("Handling BYE command")
                 conn.send(RES_OK)
-                
+
                 self.running = False
             elif data.handler is not None:
                 if data.is_subconn():
@@ -359,25 +358,24 @@ class IoTFTPServer:
             else:
                 data.state = ConnState.from_handler_result(restype)
         else:
-            match restype:
-                case HandlerResult.OK:
-                    # 200 AIGT sent in handler
-                    logger.debug("Received OK, doing nothing")
-                case HandlerResult.NEWCONN:
-                    logger.debug("Received NEWCONN, registering new subconn")
-                    self.add_subconn(conn, res, data)
-                case HandlerResult.REPLACE:
-                    logger.debug("Received REPLACE, replacing old subconn")
-                    if data.is_subconn():
-                        mainconn = self.lookup_conn(conn)
-                    else:
-                        mainconn = conn
-                    self.del_subconn(res[0])
-                    self.add_subconn(mainconn, res[1][0], res[1][1])
-                case HandlerResult.DONE:
-                    logger.debug("Received DONE, closing subconn")
-                    if data.is_subconn():
-                        self.del_subconn(conn)
+            if restype == HandlerResult.OK:
+                # 200 AIGT sent in handler
+                logger.debug("Received OK, doing nothing")
+            if restype == HandlerResult.NEWCONN:
+                logger.debug("Received NEWCONN, registering new subconn")
+                self.add_subconn(conn, res, data)
+            if restype == HandlerResult.REPLACE:
+                logger.debug("Received REPLACE, replacing old subconn")
+                if data.is_subconn():
+                    mainconn = self.lookup_conn(conn)
+                else:
+                    mainconn = conn
+                self.del_subconn(res[0])
+                self.add_subconn(mainconn, res[1][0], res[1][1])
+            if restype == HandlerResult.DONE:
+                logger.debug("Received DONE, closing subconn")
+                if data.is_subconn():
+                    self.del_subconn(conn)
 
         end_fn("process_handler")
         return

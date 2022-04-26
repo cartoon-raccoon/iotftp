@@ -21,24 +21,25 @@ def parse_command(raw):
     # buf = ""
 
     # for c in raw:
-    #     match c:
-    #         case "\"":
+    #
+    #     if c == "\"":
 
     return raw.split(" ")
 
 def run(client, args):
     if len(args) < 1:
         return
+
+    cmd = args[0].lower()
     
-    match args[0].lower():
-        case "get":
-            client.get(args[1])
-        case "put":
-            client.put(args[1])
-        case "del":
-            client.delete(args[1])
-        case "bye":
-            client.bye()
+    if cmd == "get":
+        client.get(args[1])
+    elif cmd == "put":
+        client.put(args[1])
+    elif cmd == "del":
+        client.delete(args[1])
+    elif cmd == "bye":
+        client.bye()
 
 
 def main():

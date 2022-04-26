@@ -101,28 +101,27 @@ class ConnState(Enum):
 
     @classmethod
     def from_handler_result(cls, res):
-        match res:
-            case HandlerResult.E301:
-                return ConnState.E301
-            case HandlerResult.E302:
-                return ConnState.E302
-            case HandlerResult.E303:
-                return ConnState.E303
-            case HandlerResult.E304:
-                return ConnState.E304
-            case HandlerResult.E305:
-                return ConnState.E305
-            case HandlerResult.E306:
-                return ConnState.E306
-            case HandlerResult.E307:
-                return ConnState.E307
-            case HandlerResult.E308:
-                return ConnState.E308
-            case HandlerResult.E309:
-                return ConnState.E309
-            case _:
-                #? raise error?
-                pass
+        if res == HandlerResult.E301:
+            return ConnState.E301
+        elif res == HandlerResult.E302:
+            return ConnState.E302
+        elif res == HandlerResult.E303:
+            return ConnState.E303
+        elif res == HandlerResult.E304:
+            return ConnState.E304
+        elif res == HandlerResult.E305:
+            return ConnState.E305
+        elif res == HandlerResult.E306:
+            return ConnState.E306
+        elif res == HandlerResult.E307:
+            return ConnState.E307
+        elif res == HandlerResult.E308:
+            return ConnState.E308
+        elif res == HandlerResult.E309:
+            return ConnState.E309
+        else:
+            #? raise error?
+            pass
 
 
 class ConnType(Enum):

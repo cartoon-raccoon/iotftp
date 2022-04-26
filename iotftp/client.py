@@ -57,25 +57,26 @@ class IoTFTPClient:
         return (ver, pwd, user, euid)
 
     def determine_err(self, errb):
-        match errb[0:3]:
-            case "301":
-                return ServerError("[301] Permission denied")
-            case "302":
-                return ServerError("[302] No such file or directory")
-            case "303":
-                return ServerError("[303] Not a directory")
-            case "304":
-                return ServerError("[304] File is currently in use")
-            case "305":
-                return ServerError("[305] Unsupported command")
-            case "306":
-                return ServerError("[306] Invalid arguments specified")
-            case "307":
-                return ServerError("[307] File already exists on server")
-            case "308":
-                return ServerError("[308] Unknown error")
-            case "309":
-                return ServerError("[309] Is a directory")
+        err = errb[0:3]
+
+        if err == "301":
+            return ServerError("[301] Permission denied")
+        elif err == "302":
+            return ServerError("[302] No such file or directory")
+        elif err == "303":
+            return ServerError("[303] Not a directory")
+        elif err == "304":
+            return ServerError("[304] File is currently in use")
+        elif err == "305":
+            return ServerError("[305] Unsupported command")
+        if err == "306":
+            return ServerError("[306] Invalid arguments specified")
+        elif err == "307":
+            return ServerError("[307] File already exists on server")
+        elif err == "308":
+            return ServerError("[308] Unknown error")
+        elif err == "309":
+            return ServerError("[309] Is a directory")
     
     def eval_result(self, resb, success_msg):
         """

@@ -48,69 +48,67 @@ class PutCmdHandler(BaseCommandHandler):
 
         if commtype == RW.READ:
             logger.debug("Reading from connection")
-            match self.state:
-                case PutCmdState.SENTPORT:
-                    logger.debug("Sent port, awaiting acknowledgement")
-                    b = conn.recv(8)
-                    if not b:
-                        raise ConnClosedErr()
+            if self.state == PutCmdState.SENTPORT:
+                logger.debug("Sent port, awaiting acknowledgement")
+                b = conn.recv(8)
+                if not b:
+                    raise ConnClosedErr()
 
-                    if b == ACKNOW:
-                        logger.debug("Got acknowledgement")
-                        self.state = PutCmdState.CONNECT
-                    else:
-                        raise ConnClosedErr()
+                if b == ACKNOW:
+                    logger.debug("Got acknowledgement")
+                    self.state = PutCmdState.CONNECT
+                else:
+                    raise ConnClosedErr()
 
         elif commtype == RW.WRITE:
             logger.debug("Writing to connection")
-            match self.state:
-                case PutCmdState.UNHANDLED:
-                    logger.debug(f"[{data.addr}] Connection unhandled, setting up now")
-                    logger.debug(f"args: {self.args}")
-                    f = os.path.abspath(self.args[0])
+            if self.state == PutCmdState.UNHANDLED:
+                logger.debug(f"[{data.addr}] Connection unhandled, setting up now")
+                logger.debug(f"args: {self.args}")
+                f = os.path.abspath(self.args[0])
 
-                    logger.debug(f"Got fully qualified path {f}")
+                logger.debug(f"Got fully qualified path {f}")
 
-                    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                    sock.bind((params.host, 0))
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sock.bind((params.host, 0))
 
-                    try:
-                        if os.path.exists(f):
-                            end_fn("put_handler")
-                            return HandlerResult.E307, CommandError.ERR_EXST
-                        
-                        f = open(self.args[0], "wb")
-                    
-                    except Exception as e:
-                        logger.error(f"[ERR] {e}")
+                try:
+                    if os.path.exists(f):
                         end_fn("put_handler")
-                        self.cleanup_err()
-                        return HandlerResult.E308, CommandError.ERR_UNKW
+                        return HandlerResult.E307, CommandError.ERR_EXST
                     
-                    port = sock.getsockname()[1]
-
-                    logger.debug(f"Got port {port}")
-
-                    reply = [
-                        RES_OK,
-                        bytes(str(port), params.encoding)
-                    ]
-                    
-                    conn.send(params.delim.join(reply))
-                    self.subconn = sock
-                    self.state = PutCmdState.SENTPORT
-                    self.file = f
-                    self.totalsize = int(self.args[1])
-
+                    f = open(self.args[0], "wb")
+                
+                except Exception as e:
+                    logger.error(f"[ERR] {e}")
                     end_fn("put_handler")
-                    return HandlerResult.NEWCONN, sock
+                    self.cleanup_err()
+                    return HandlerResult.E308, CommandError.ERR_UNKW
+                
+                port = sock.getsockname()[1]
 
-                case PutCmdState.COMPLETE:
-                    logger.debug(f"[{data.addr}] Transfer complete, sending ack")
-                    conn.send(RES_OK)
+                logger.debug(f"Got port {port}")
 
-                    end_fn("put_handler")
-                    return HandlerResult.DONE, None
+                reply = [
+                    RES_OK,
+                    bytes(str(port), params.encoding)
+                ]
+                
+                conn.send(params.delim.join(reply))
+                self.subconn = sock
+                self.state = PutCmdState.SENTPORT
+                self.file = f
+                self.totalsize = int(self.args[1])
+
+                end_fn("put_handler")
+                return HandlerResult.NEWCONN, sock
+
+            if self.state == PutCmdState.COMPLETE:
+                logger.debug(f"[{data.addr}] Transfer complete, sending ack")
+                conn.send(RES_OK)
+
+                end_fn("put_handler")
+                return HandlerResult.DONE, None
 
         return HandlerResult.OK, None
 
@@ -118,34 +116,33 @@ class PutCmdHandler(BaseCommandHandler):
         start_fn("put_handler_subconn")
 
         if commtype == RW.READ:
-            match self.state:
-                case PutCmdState.CONNECT:
-                    self.subconn.settimeout(5)
+            if self.state == PutCmdState.CONNECT:
+                self.subconn.settimeout(5)
 
-                    logger.debug("Listening for connection")
-                    self.subconn.listen()
+                logger.debug("Listening for connection")
+                self.subconn.listen()
 
-                    newconn, addr = self.subconn.accept()
-                    logger.debug(f"Got new connection {addr}")
+                newconn, addr = self.subconn.accept()
+                logger.debug(f"Got new connection {addr}")
 
-                    newdata = ConnData(ConnType.TRANSFER, addr, None, self)
+                newdata = ConnData(ConnType.TRANSFER, addr, None, self)
 
-                    oldconn = self.subconn
-                    self.subconn = newconn
+                oldconn = self.subconn
+                self.subconn = newconn
 
-                    self.state = PutCmdState.RECEIVING
-                    end_fn("put_handler_subconn")
-                    return HandlerResult.REPLACE, (oldconn, (newconn, newdata))
+                self.state = PutCmdState.RECEIVING
+                end_fn("put_handler_subconn")
+                return HandlerResult.REPLACE, (oldconn, (newconn, newdata))
 
-                case PutCmdState.RECEIVING:
-                    b = conn.recv(self.blocksize)
-                    self.received += len(b)
+            elif self.state == PutCmdState.RECEIVING:
+                b = conn.recv(self.blocksize)
+                self.received += len(b)
 
-                    self.file.write(b)
+                self.file.write(b)
 
-                    if self.received >= self.totalsize:
-                        self.state = PutCmdState.COMPLETE
-                        self.file.close()
+                if self.received >= self.totalsize:
+                    self.state = PutCmdState.COMPLETE
+                    self.file.close()
 
         elif commtype == RW.WRITE:
             pass
