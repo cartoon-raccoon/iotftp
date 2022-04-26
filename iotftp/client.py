@@ -200,8 +200,6 @@ class IoTFTPClient:
             params = params.split(DELIMITER.decode(self.encoding))
             port = int(params[1])
 
-            logger.debug(f"[*] Sending {size} bytes on port {port}")
-
             s.send(ACKNOW)
 
             s2 = socket(AF_INET, SOCK_STREAM)
@@ -219,6 +217,9 @@ class IoTFTPClient:
                         raise e
                 else:
                     break
+
+            newport = s2.getsockname()[1]
+            logger.debug(f"[*] Sending {size} bytes on port {newport}")
             
             with s2:
                 s2.settimeout(120)
@@ -228,7 +229,6 @@ class IoTFTPClient:
 
                 while sent < size:
                     outb = f.read(bs)
-                    logger.debug(sent)
                     out = s2.send(outb)
                     sent += out
                 

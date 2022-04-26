@@ -40,7 +40,7 @@ class PutCmdHandler(BaseCommandHandler):
         self.totalsize = 0
         # number of bytes received
         self.received = 0
-        self.blocksize = get_blocksize(self.totalsize)
+        self.blocksize = 0
 
 
     def handle(self, conn: socket.socket, params, data, commtype):
@@ -101,6 +101,7 @@ class PutCmdHandler(BaseCommandHandler):
                     self.state = PutCmdState.SENTPORT
                     self.file = f
                     self.totalsize = int(self.args[1])
+                    self.blocksize = get_blocksize(self.totalsize)
 
                     end_fn("put_handler")
                     return HandlerResult.NEWCONN, sock
