@@ -7,6 +7,13 @@ logger = logging.getLogger()
 
 from iotftp.utils import *
 
+class TimeoutErr(TimeoutError):
+    def __init__(self, b):
+        self.b = b
+
+    def __repr__(self):
+        return f"TimeoutErr(b: {self.b})"
+
 class ServerError(Exception):
     """
     Error that has occurred on the server.
@@ -93,8 +100,10 @@ class IoTFTPClient:
             raise FileExistsError(abspath)
         
         with socket(AF_INET, SOCK_STREAM) as s:
-            s.settimeout(5)
+            s.settimeout(120)
             s.connect((self.ipaddr, self.port))
+
+            logger.debug(s.getsockname())
 
             _ = self.parse_welcome_msg(s)
 
@@ -138,7 +147,7 @@ class IoTFTPClient:
                     break
 
             with s2:
-                s2.settimeout(5)
+                s2.settimeout(120)
                 f = open(filename, "wb")
                 inb, recved = bytes(), 0
                 bs = get_blocksize(size)
@@ -161,8 +170,10 @@ class IoTFTPClient:
             raise FileNotFoundError(abspath)
 
         with socket(AF_INET, SOCK_STREAM) as s:
-            s.settimeout(5)
+            s.settimeout(120)
             s.connect((self.ipaddr, self.port))
+            
+            logger.debug(s.getsockname())
 
             _ = self.parse_welcome_msg(s)
 
@@ -210,13 +221,14 @@ class IoTFTPClient:
                     break
             
             with s2:
-                s2.settimeout(5)
+                s2.settimeout(120)
                 f = open(filename, "rb")
                 sent = 0
                 bs = get_blocksize(size)
 
                 while sent < size:
                     outb = f.read(bs)
+                    logger.debug(sent)
                     out = s2.send(outb)
                     sent += out
                 
@@ -228,7 +240,7 @@ class IoTFTPClient:
 
     def delete(self, filename):
         with socket(AF_INET, SOCK_STREAM) as s:
-            s.settimeout(5)
+            s.settimeout(120)
             s.connect((self.ipaddr, self.port))
 
             _ = self.parse_welcome_msg(s)

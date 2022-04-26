@@ -37,6 +37,8 @@ def run(client, args):
             client.put(args[1])
         case "del":
             client.delete(args[1])
+        case "bye":
+            client.bye()
 
 
 def main():
