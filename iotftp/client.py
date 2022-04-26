@@ -93,6 +93,7 @@ class IoTFTPClient:
             raise FileExistsError(abspath)
         
         with socket(AF_INET, SOCK_STREAM) as s:
+            s.settimeout(5)
             s.connect((self.ipaddr, self.port))
 
             _ = self.parse_welcome_msg(s)
@@ -137,6 +138,7 @@ class IoTFTPClient:
                     break
 
             with s2:
+                s2.settimeout(5)
                 f = open(filename, "wb")
                 inb, recved = bytes(), 0
                 bs = get_blocksize(size)
@@ -159,6 +161,7 @@ class IoTFTPClient:
             raise FileNotFoundError(abspath)
 
         with socket(AF_INET, SOCK_STREAM) as s:
+            s.settimeout(5)
             s.connect((self.ipaddr, self.port))
 
             _ = self.parse_welcome_msg(s)
@@ -207,6 +210,7 @@ class IoTFTPClient:
                     break
             
             with s2:
+                s2.settimeout(5)
                 f = open(filename, "rb")
                 sent = 0
                 bs = get_blocksize(size)
@@ -224,6 +228,7 @@ class IoTFTPClient:
 
     def delete(self, filename):
         with socket(AF_INET, SOCK_STREAM) as s:
+            s.settimeout(5)
             s.connect((self.ipaddr, self.port))
 
             _ = self.parse_welcome_msg(s)
@@ -246,4 +251,14 @@ class IoTFTPClient:
         pass
 
     def bye(self):
-        pass
+        with socket(AF_INET, SOCK_STREAM) as s:
+            s.connect((self.ipaddr, self.port))
+
+            _ = self.parse_welcome_msg(s)
+
+            s.send(b"BYE")
+
+            s.settimeout(5)
+            res = s.recv(8)
+        
+        self.eval_result(res, "[*] Command successful")

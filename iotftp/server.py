@@ -250,8 +250,7 @@ class IoTFTPServer:
                 data.state = ConnState.E305
             case "BYE":
                 logger.debug("Got BYE command")
-                # data.state = ConnState.BYE
-                data.state = ConnState.E305
+                data.state = ConnState.BYE
             case _:
                 logger.debug(f"Got {command}")
         end_fn("evalcmd")
@@ -308,6 +307,11 @@ class IoTFTPServer:
                 logger.debug(f"[*] Sending error message for error {data.state}")
                 conn.send(data.state.value.value)
                 data.state = ConnState.ACK
+            elif data.state == ConnState.BYE:
+                logger.debug("Handling BYE command")
+                conn.send(RES_OK)
+                
+                self.running = False
             elif data.handler is not None:
                 if data.is_subconn():
                     ty, res = data.handler.handle_subconn(conn, self.params(), data, RW.WRITE)
