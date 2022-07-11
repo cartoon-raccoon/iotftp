@@ -4,12 +4,16 @@ import logging
 from iotftp import IoTFTPServer, InvalidIPException
 
 logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.WARN)
 handler = logging.StreamHandler()
 logger.addHandler(handler)
 
 def main():
     ipaddr, port = sys.argv[1], int(sys.argv[2])
+
+    if sys.argv[3] == "-v":
+        logger.setLevel(logging.DEBUG)
+    
     try:
         server = IoTFTPServer(ipaddr, port, 'ascii')
     except InvalidIPException:
