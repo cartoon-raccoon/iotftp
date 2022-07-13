@@ -101,7 +101,7 @@ class IoTFTPClient:
         
         with socket(AF_INET, SOCK_STREAM) as s:
             s.settimeout(120)
-            s.connect((self.ipaddr, self.port))
+            s = self._attempt_connection(s, (self.ipaddr, self.port), tries=5)
 
             logger.debug(s.getsockname())
 
@@ -171,7 +171,7 @@ class IoTFTPClient:
 
         with socket(AF_INET, SOCK_STREAM) as s:
             s.settimeout(120)
-            s.connect((self.ipaddr, self.port))
+            s = self._attempt_connection(s, (self.ipaddr, self.port), tries=5)
             
             logger.debug(s.getsockname())
 
@@ -241,7 +241,7 @@ class IoTFTPClient:
     def delete(self, filename):
         with socket(AF_INET, SOCK_STREAM) as s:
             s.settimeout(120)
-            s.connect((self.ipaddr, self.port))
+            s = self._attempt_connection(s, (self.ipaddr, self.port), tries=5)
 
             _ = self.parse_welcome_msg(s)
 
@@ -274,3 +274,21 @@ class IoTFTPClient:
             res = s.recv(8)
         
         self.eval_result(res, "[*] Command successful")
+    
+    def _attempt_connection(self, sock, params, tries=1, wait=5):
+        """
+        Attempt a connection on a socket with given params (ipaddr, port).
+
+        Tries - number of times to attempt making the connection.
+        Wait - Waiting time between tries.
+        """
+
+        for i in range(tries):
+            try:
+                sock.connect(params)
+            except OSError as e:
+                time.sleep(wait)
+                if i == tries - 1:
+                    raise e
+            else:
+                return sock
