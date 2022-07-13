@@ -11,7 +11,7 @@ logger.addHandler(handler)
 def main():
     ipaddr, port = sys.argv[1], int(sys.argv[2])
 
-    if sys.argv[3] == "-v":
+    if len(sys.argv) > 3 and sys.argv[3] == "-v":
         logger.setLevel(logging.DEBUG)
     
     try:
