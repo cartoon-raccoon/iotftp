@@ -340,7 +340,6 @@ class IoTFTPServer:
         Processes the handler result accordingly.
         """
         start_fn("process_handler")
-        print(restype, res)
 
         if restype is None:
             logger.error("[ERR] Received invalid handler result")
